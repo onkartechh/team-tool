@@ -14,7 +14,7 @@ test('serves assets, persists records across restart, rejects invalid and stale 
  try{
  await start();
  for(const [asset,content] of [['/','Derq AI'],['/app.js','/api/state'],['/ids.js','getRandomValues'],['/state.js','TeamspaceState'],['/calendar.js','headerReminders'],['/notepad.js','DerqNotepad'],['/assistant-ui.js','Derq AI'],['/analytics.js','TeamspaceAnalytics'],['/reconcile.js','TeamspaceReconcile'],['/sync.js','TeamspaceSync'],['/offline.js','DerqSync'],['/leadership.js','DerqLeadership'],['/globe.js','TeamGlobe'],['/commands.js','TeamspaceCommands'],['/workspace-ui.js','DerqWorkspace'],['/sw.js','/api/'],['/styles.css',':root']]){const res=await fetch(url+asset);assert.equal(res.status,200);assert.ok((await res.text()).includes(content));}
- const logo=await fetch(url+'/derq-logo.png');assert.equal(logo.status,200);assert.equal(logo.headers.get('content-type'),'image/png');assert.equal(Buffer.from(await logo.arrayBuffer()).subarray(1,4).toString(),'PNG');
+ assert.equal((await fetch(url+'/derq-logo.png')).status,404);
  assert.equal((await fetch(url+'/missing')).status,404);
  const initial=await fetch(url+'/api/state');const etag=initial.headers.get('etag');assert.deepEqual(await initial.json(),{people:[],tasks:[],activities:[]});
  const data={people:[{id:'p1',name:'Alex',strengths:'Systems thinking',notes:'Existing volume notes',customField:'Keep this legacy field'}],tasks:[{id:'t1',title:'Plan',person:'p1'}],activities:[{id:'a1',title:'Coffee'}]};

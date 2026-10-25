@@ -1,5 +1,5 @@
-const CACHE='derq-workspace-v10';
-const ASSETS=['/','/styles.css','/state.js','/analytics.js','/reconcile.js','/sync.js','/offline.js','/calendar.js','/ids.js','/app.js','/leadership.js','/globe.js','/commands.js','/workspace-ui.js','/notepad.js','/assistant-ui.js','/derq-logo.png','/favicon.svg'];
+const CACHE='derq-workspace-v11';
+const ASSETS=['/','/styles.css','/state.js','/analytics.js','/reconcile.js','/sync.js','/offline.js','/calendar.js','/ids.js','/app.js','/leadership.js','/globe.js','/commands.js','/workspace-ui.js','/notepad.js','/assistant-ui.js','/favicon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('derq-workspace-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{

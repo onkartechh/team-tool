@@ -7,7 +7,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 # No third-party runtime dependencies are needed.
-COPY --chown=node:node package.json server.js index.html app.js ids.js styles.css derq-logo.png favicon.svg state.js calendar.js assistant-actions.js assistant-provider.js assistant-local.js assistant-server.js assistant-ui.js notepad.js analytics.js reconcile.js sync.js offline.js leadership.js globe.js commands.js workspace-ui.js sw.js ./
+COPY --chown=node:node package.json server.js index.html app.js ids.js styles.css favicon.svg state.js calendar.js assistant-actions.js assistant-provider.js assistant-local.js assistant-server.js assistant-ui.js notepad.js analytics.js reconcile.js sync.js offline.js leadership.js globe.js commands.js workspace-ui.js sw.js ./
 
 RUN mkdir -p /app/data && chown node:node /app/data
 VOLUME ["/app/data"]
