@@ -2,9 +2,10 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const files = {'/':'index.html','/app.js':'app.js','/ids.js':'ids.js','/styles.css':'styles.css','/favicon.svg':'favicon.svg','/state.js':'state.js','/calendar.js':'calendar.js','/assistant-ui.js':'assistant-ui.js','/notepad.js':'notepad.js','/analytics.js':'analytics.js','/reconcile.js':'reconcile.js','/sync.js':'sync.js','/offline.js':'offline.js','/leadership.js':'leadership.js','/globe.js':'globe.js','/commands.js':'commands.js','/workspace-ui.js':'workspace-ui.js','/sw.js':'sw.js'};
+const files = {'/':'index.html','/app.js':'app.js','/ids.js':'ids.js','/styles.css':'styles.css','/derq-logo.png':'derq-logo.png','/integrations-ui.js':'integrations-ui.js','/slack-app-manifest.json':'slack-app-manifest.json','/integrations.env.example':'integrations.env.example','/favicon.svg':'favicon.svg','/state.js':'state.js','/calendar.js':'calendar.js','/assistant-ui.js':'assistant-ui.js','/notepad.js':'notepad.js','/analytics.js':'analytics.js','/reconcile.js':'reconcile.js','/sync.js':'sync.js','/offline.js':'offline.js','/leadership.js':'leadership.js','/globe.js':'globe.js','/commands.js':'commands.js','/workspace-ui.js':'workspace-ui.js','/sw.js':'sw.js'};
 const {createAssistantRouter}=require('./assistant-server');
-function createWorkspaceServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data'),assistantPlanner}={}){
+const {createIntegrations}=require('./integrations');
+function createWorkspaceServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data'),assistantPlanner,integrationOptions={}}={}){
 const directory = dataDir;
 fs.mkdirSync(directory, {recursive:true});
 const dataFile = path.join(directory, 'teamspace.json');
@@ -22,8 +23,10 @@ function read() { const data = JSON.parse(fs.readFileSync(dataFile, 'utf8')); if
 read(); // Fail startup rather than overwrite unreadable data.
 const revision = data => '"' + crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex') + '"';
 const assistantRoute=createAssistantRouter({read,persist,revision,...(assistantPlanner?{planner:assistantPlanner,configured:()=>true}:{})});
+const integrations=createIntegrations({read,persist,revision,dataDir,...integrationOptions});
 const server = http.createServer(async (req,res)=>{
  const url = req.url.split('?')[0];
+ if(url.startsWith('/api/integrations'))return integrations.route(req,res,url);
  if(url.startsWith('/api/assistant'))return assistantRoute(req,res,url);
  if (url === '/api/state') {
   res.setHeader('Content-Type','application/json');
@@ -46,10 +49,11 @@ const server = http.createServer(async (req,res)=>{
  const file=files[url];
  if(!file){res.writeHead(404);return res.end('Not found');}
  if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);return res.end();}
- res.setHeader('Content-Type',file.endsWith('.svg')?'image/svg+xml':file.endsWith('.png')?'image/png':file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');
+ res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.example')?'text/plain':file.endsWith('.svg')?'image/svg+xml':file.endsWith('.png')?'image/png':file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');
  res.setHeader('Cache-Control','no-cache');
  fs.createReadStream(path.join(__dirname,file)).pipe(res);
 });
+ server.on('close',()=>integrations.stop());
  return server;
 }
 if(require.main===module){

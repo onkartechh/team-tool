@@ -4,7 +4,7 @@ Derq’s team leadership workspace for daily assignments, strengths and coaching
 
 ## Derq leadership dashboard
 
-The blue command center has a text-only workspace header and includes clickable summary tiles that open team, active, blocked, and overdue views. It also includes clickable member cards with active assignments, strengths, growth notes, and the four most recent assignments sorted by work date. The top-right clock shows the browser’s local time and timezone. Delivery and workload visuals use your actual records; no demo members or tasks are added. A clickable execution map shows each task stage, and a seven-day planning chart shows open work by due date. Select any date block to see the tasks due that day, with owners, work dates, status, priority, success criteria, and blockers. Dates with zero tasks show an empty state; completed tasks are excluded to match the chart. The animated team network respects reduced-motion preferences.
+The blue command center uses the Derq logo and includes clickable summary tiles that open team, active, blocked, and overdue views. It also includes clickable member cards with active assignments, strengths, growth notes, and the four most recent assignments sorted by work date. The top-right clock shows the browser’s local time and timezone. Delivery and workload visuals use your actual records; no demo members or tasks are added. A clickable execution map shows each task stage, and a seven-day planning chart shows open work by due date. Select any date block to see the tasks due that day, with owners, work dates, status, priority, success criteria, and blockers. Dates with zero tasks show an empty state; completed tasks are excluded to match the chart. The animated team network respects reduced-motion preferences.
 
 Use the leadership action queue to review blocked, overdue, and high-priority work. Check-ins scheduled for today or earlier appear in the coaching queue; update the next date after each conversation. Add success criteria to assignments to clarify the intended outcome. Workload bars compare active task counts and should be discussed alongside each member’s stated capacity.
 
@@ -217,3 +217,47 @@ npm test
 ```
 
 The server defaults to port 3000 and stores data in the ignored `data/` directory. Set `DATA_DIR` to use another directory. Tests use isolated temporary storage and verify assets, input validation, stale-save rejection, and persistence across server restarts.
+
+## Jira, Slack Lists and messaging
+
+Open **Connections** in the sidebar for **Task tracking**, **Slack messages**, **People & previews**, **Sync & reminders**, and a **Setup guide**. The Derq sidebar logo is restored alongside the current drawer, command palette, comparison and globe features.
+
+These connections require your own Jira/Slack credentials; they do not use an OpenAI key. No accounts are connected by default, no test message is sent during connection verification, and task sync and reminders start disabled. Tokens are read only from the server environment; they are not returned to the browser, included in workspace JSON backups or stored in Git. Existing private-workspace deployment assumptions still apply.
+
+### Configure the server
+
+Copy entries from [integrations.env.example](integrations.env.example) into the existing `.env` beside `compose.yaml`, preserving existing settings. Fill in the actual values locally, then rebuild:
+
+```sh
+docker compose up -d --build
+```
+
+For local Node 24 development, `npm start` loads an optional `.env` using Node's built-in environment-file support. Environment values already set by the process take precedence.
+
+**Jira Cloud:** set `DERQ_JIRA_BASE_URL` to your `https://company.atlassian.net` site, `DERQ_JIRA_EMAIL` to the token owner's email, and `DERQ_JIRA_API_TOKEN` to an API token with issue-read/project access. Use a standard site-compatible API token. This implementation targets Jira Cloud site URLs, not Jira Data Center or scoped-token gateway URLs. The query can initially be supplied with `DERQ_JIRA_JQL`, then edited under Sync & reminders. Test access and save a team/project JQL query that includes all desired statuses. Jira search uses the enhanced `/rest/api/3/search/jql` endpoint with pagination.
+
+**Slack:** create and install a Slack app using [slack-app-manifest.json](slack-app-manifest.json). The bot token goes in `DERQ_SLACK_BOT_TOKEN`; messaging requires `chat:write` and `im:write`, and people lookup requires `users:read` (`users:read.email` supplies optional work emails). Set `DERQ_SLACK_LISTS_TOKEN` to a token granted `lists:read` and access to the chosen List. This can be a separately authorized user token; if omitted, the bot token is used, subject to Slack's token-type and List-access rules. The manifest includes the Lists user scope. Workspace administrators may need to approve the app/scopes. Bot installation alone does not grant access to every List.
+
+Set `DERQ_SLACK_LIST_ID` initially, or enter the `F…` ID from the List link in Sync & reminders. **Inspect List columns** reads field IDs/keys and sample values from up to five items without modifying the List. Map its name, assignee, due date and completed checkbox. Standard field keys default to `name`, `assignee`, `due_date`, and `completed`; custom Lists may use different column IDs. The optional readable status field recognizes common To do/In progress/Blocked/Done labels. **Custom status mapping** accepts comma-separated source labels or select-option IDs for each workspace status; unknown nonempty statuses require a mapping instead of being guessed. Completed-checkbox values take precedence. Empty Lists need their column IDs/keys entered manually until an item exists.
+
+### Match people and track tasks
+
+In **People & previews**, map each member's Jira account ID, Slack user ID and optional work email. Jira can match a visible work email when no account ID is configured; private Jira email fields may be omitted by Atlassian. Slack uses explicit user IDs. Unmatched owners remain unassigned here and show their source identity for mapping. The workspace has one primary owner per task; a multi-owner Slack item uses its first assignee and retains the complete source-ID list.
+
+Select **Sync now**, then enable automatic polling at an interval from 1 to 60 minutes. The server checks enabled sources every 30 seconds and runs each when its interval is due. Browser workspaces refresh through the existing three-way reconciliation roughly every 45 seconds when no form/draft blocks adoption. Connections shows last success, next check, rate-limit/errors, source links and review counts. The Daily tasks page also filters by workspace/Jira/Slack source. A task drawer includes its source status and link.
+
+Source IDs are namespaced by Jira site or Slack workspace/List, preventing duplicate imports. Polls merge into the latest workspace after network requests finish. Local notes, unknown fields, unrelated assignments and metadata are retained. Mapped fields that changed independently in both places require **Keep local** or **Use source**. Choosing local acknowledges the source version without sending that local value upstream. This release imports source updates; editing a local task does not silently write to Jira or Slack Lists. Use **Open source** to change the upstream record.
+
+Items no longer returned by the selected query/List retain their last known local record; they are not automatically deleted or assumed complete. Include completed issues in JQL to observe their resolution changes. Deleting a local imported task hides it from later imports; **Allow hidden items to import again** restores eligibility. No partial import is committed if pagination fails, mapping is invalid, more than 2,000 items match, or the result would exceed the existing 5 MB workspace limit.
+
+Jira completions use the recorded resolution date. Already-completed Slack items without a completion-date field receive no invented historical date. A previously open Slack item first observed complete is dated on the sync day and marked `completionDateOrigin: observed`; later item edits do not move that date. Completion credit uses the mapped assignee available to the workspace. Task volume remains separate from effort or quality.
+
+### Direct messages and reminders
+
+Under **Slack messages**, load people, select a recipient, write a plain-text message and choose **Send message**, or schedule a local date/time up to 30 days ahead. The server opens the direct-message conversation and posts as your app's bot. Messages and reminder previews never execute Slack markup or channel mentions. Recipient mappings and message history are visible to people who can access this shared deployment.
+
+Queued messages run while the application server is running, even with the browser closed. History distinguishes queued, pending, sent, failed, cancelled and uncertain (`unknown`) outcomes. Queued messages can be cancelled. A request ID and fingerprint prevent duplicate submission across retries/restarts. Definite Slack rate limits defer delivery, with up to five attempts. A timeout or uncertain post result is never retried automatically; check Slack before intentionally creating a new send. A server restart during an in-flight send also marks it uncertain. Completed history older than 90 days is pruned when queuing new messages; uncertain records are retained, with a 5,000-record safety limit.
+
+Daily reminders are explicitly opt-in under **Sync & reminders**. Choose a timezone, daily time and mapped recipients, then save. Each selected member gets at most one reminder per local calendar day when due/overdue tasks exist. Jobs queue in the first hour after the configured time; a missed window does not trigger a late catch-up burst. **Preview without sending** shows the content first. It includes task titles/status/due dates, not private member notes. No reminder is sent for a member with no matching tasks.
+
+Connection settings, source bookkeeping, queued deliveries and delivery history are stored in `data/integrations.json` inside the existing Docker volume. The original `teamspace.json` remains compatible and holds linked tasks and people mappings. The workspace Export backup includes these tasks/mappings but does not include integration settings or delivery history; back up the data directory/volume to retain both files. Keep populated `.env` credentials separate and secure. A damaged integration file causes startup to fail rather than silently losing queued-message deduplication state.

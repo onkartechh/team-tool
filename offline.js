@@ -89,10 +89,11 @@
   if(engine.info().pending)return;if(!confirm('Remove synced offline copies from this device? Server records and pending drafts remain. Other open tabs can save new copies.'))return;
   try{for(const entry of await operation('getAll'))if(!entry.pending)await operation('deleteClean',entry.id);deviceCopyCleared=true;notice('Synced copies cleared where browser storage permits. Server records and pending drafts remain.');document.querySelector('#sync-dialog').close();}catch{document.querySelector('#sync-error').textContent='Could not clear saved copies. You can manage this app’s storage in browser site settings.';}
  };
+ setInterval(()=>{if(loaded&&navigator.onLine!==false&&!document.hidden&&canAdopt()&&engine.info().status==='saved')engine.refresh();},45000);
  window.addEventListener('online',()=>engine.refresh());window.addEventListener('offline',()=>{engine.refresh();});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&loaded&&engine.info().pending&&engine.info().status!=='conflict')engine.flush();});
  for(const dialog of document.querySelectorAll('dialog'))dialog.addEventListener('close',()=>{if(loaded&&(engine.info().pending||engine.info().status==='pending')&&engine.info().status!=='conflict')engine.flush();});
  setInterval(()=>{if(loaded&&engine.info().pending&&engine.info().status!=='conflict'&&!document.querySelector('#sync-dialog').open)engine.flush();},15000);
  if('serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('/sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{offlineReady=true;}).catch(()=>{});
- window.DerqSync={load:()=>engine.load(),stage:value=>engine.stage(value),flush:choices=>engine.flush(choices),accept:(value,tag)=>engine.accept(value,tag),info:()=>engine.info(),paint,show,ready:()=>offlineReady};
+ window.DerqSync={load:()=>engine.load(),stage:value=>engine.stage(value),flush:choices=>engine.flush(choices),refresh:()=>engine.refresh(),accept:(value,tag)=>engine.accept(value,tag),info:()=>engine.info(),paint,show,ready:()=>offlineReady};
 })();

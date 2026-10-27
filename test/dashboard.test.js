@@ -208,3 +208,9 @@ test('new tasks capture creation independently of assignment dates and quick edi
  view.run("applyInlineEdit('tasks',state.tasks[0].id,'status','In progress')");
  assert.equal(view.run('state.tasks[0].createdDate'),view.run('today()'));
 });
+
+test('Connections routes to the integration view and does not fall through to leadership analytics',()=>{
+ const view=app({people:[],tasks:[],activities:[]});
+ view.run("globalThis.DerqLeadership={page(){throw Error('Wrong page handler');},afterRender(){}};globalThis.DerqIntegrations={page(){return '<h1>Connected work</h1>';},afterRender(){}};page='connections';render()");
+ assert.equal(view.element('#content').innerHTML,'<h1>Connected work</h1>');assert.equal(view.element('#breadcrumb').textContent,'Connections');
+});

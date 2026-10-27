@@ -7,6 +7,13 @@ services:
       DERQ_ASSISTANT_MODE: "${DERQ_ASSISTANT_MODE:-local}"
       DERQ_AI_API_KEY: "${DERQ_AI_API_KEY:-}"
       DERQ_AI_MODEL: "${DERQ_AI_MODEL:-gpt-4.1-mini}"
+      DERQ_JIRA_BASE_URL: "${DERQ_JIRA_BASE_URL:-}"
+      DERQ_JIRA_EMAIL: "${DERQ_JIRA_EMAIL:-}"
+      DERQ_JIRA_API_TOKEN: "${DERQ_JIRA_API_TOKEN:-}"
+      DERQ_JIRA_JQL: "${DERQ_JIRA_JQL:-}"
+      DERQ_SLACK_BOT_TOKEN: "${DERQ_SLACK_BOT_TOKEN:-}"
+      DERQ_SLACK_LISTS_TOKEN: "${DERQ_SLACK_LISTS_TOKEN:-}"
+      DERQ_SLACK_LIST_ID: "${DERQ_SLACK_LIST_ID:-}"
     restart: unless-stopped
     volumes:
       - teamspace_data:/app/data

@@ -7,7 +7,7 @@ const fields={
  task:['title','person','date','due','priority','status','blocker','outcome','dependsOn','completedDate'],
  activity:['title','type','person','date','status','notes']
 };
-const pages=['overview','people','tasks','activities','calendar','activity','presentation','impact'];
+const pages=['overview','people','tasks','activities','calendar','activity','presentation','impact','connections'];
 const kinds=['create_member','update_member','delete_member','create_task','update_task','delete_task','create_activity','update_activity','delete_activity','set_leave','remove_leave','navigate','view_member','view_due','export_backup','import_backup','append_member_note','append_activity_note'];
 function fail(message){throw new AssistantError(message);}
 function applyPlan(original,plan,today){
